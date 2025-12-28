@@ -37,12 +37,14 @@ const Inventory = () => {
 
   const filteredProducts = (products || []).filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.link.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStudio = studioFilter === 'ALL' || product.studio_id === studioFilter;
+      product.affiliate_link.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStudio = studioFilter === 'ALL' || 
+      (studioFilter === 'GLOBAL_POOL' ? product.studio_id === null : product.studio_id === studioFilter);
     return matchesSearch && matchesStudio;
   });
 
-  const getStudioName = (studioId: string) => {
+  const getStudioName = (studioId: string | null) => {
+    if (!studioId) return 'Global Pool';
     const studio = studios?.find(s => s.id === studioId);
     return studio?.name || '-';
   };
@@ -97,6 +99,7 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Semua Studio</SelectItem>
+                <SelectItem value="GLOBAL_POOL">🌐 Global Pool</SelectItem>
                 {studios?.map((studio) => (
                   <SelectItem key={studio.id} value={studio.id}>
                     {studio.name}
@@ -183,12 +186,12 @@ const Inventory = () => {
                             <div>
                               <p className="text-sm font-medium text-foreground truncate max-w-[200px]">{product.name}</p>
                               <a 
-                                href={product.link} 
+                                href={product.affiliate_link} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="text-xs text-primary hover:underline truncate max-w-[200px] block"
                               >
-                                {product.link}
+                                {product.affiliate_link}
                               </a>
                             </div>
                           </div>

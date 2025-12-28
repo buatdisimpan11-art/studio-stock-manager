@@ -51,45 +51,48 @@ export type Database = {
       }
       products: {
         Row: {
+          affiliate_link: string
           category: string | null
           clicks: number
           cooldown_until: string | null
           created_at: string
           gmv: number
           id: string
-          link: string
           name: string
+          original_url: string | null
           score: number
           status: Database["public"]["Enums"]["product_status"]
-          studio_id: string
+          studio_id: string | null
           updated_at: string
         }
         Insert: {
+          affiliate_link: string
           category?: string | null
           clicks?: number
           cooldown_until?: string | null
           created_at?: string
           gmv?: number
           id?: string
-          link: string
           name: string
+          original_url?: string | null
           score?: number
           status?: Database["public"]["Enums"]["product_status"]
-          studio_id: string
+          studio_id?: string | null
           updated_at?: string
         }
         Update: {
+          affiliate_link?: string
           category?: string | null
           clicks?: number
           cooldown_until?: string | null
           created_at?: string
           gmv?: number
           id?: string
-          link?: string
           name?: string
+          original_url?: string | null
           score?: number
           status?: Database["public"]["Enums"]["product_status"]
-          studio_id?: string
+          studio_id?: string | null
           updated_at?: string
         }
         Relationships: [
