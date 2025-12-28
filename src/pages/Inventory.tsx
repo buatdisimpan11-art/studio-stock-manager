@@ -38,13 +38,11 @@ const Inventory = () => {
   const filteredProducts = (products || []).filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.affiliate_link.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStudio = studioFilter === 'ALL' || 
-      (studioFilter === 'GLOBAL_POOL' ? product.studio_id === null : product.studio_id === studioFilter);
+    const matchesStudio = studioFilter === 'ALL' || product.studio_id === studioFilter;
     return matchesSearch && matchesStudio;
   });
 
-  const getStudioName = (studioId: string | null) => {
-    if (!studioId) return 'Global Pool';
+  const getStudioName = (studioId: string) => {
     const studio = studios?.find(s => s.id === studioId);
     return studio?.name || '-';
   };
@@ -99,7 +97,6 @@ const Inventory = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Semua Studio</SelectItem>
-                <SelectItem value="GLOBAL_POOL">🌐 Global Pool</SelectItem>
                 {studios?.map((studio) => (
                   <SelectItem key={studio.id} value={studio.id}>
                     {studio.name}

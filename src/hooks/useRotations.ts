@@ -27,11 +27,11 @@ export function useRotations() {
 
           if (liveError) throw liveError;
 
-          // Get AVAILABLE products from Global Reserve Pool (studio_id IS NULL)
+          // Get AVAILABLE products from the same studio
           const { data: availableProducts, error: availableError } = await supabase
             .from('products')
             .select('*')
-            .is('studio_id', null)
+            .eq('studio_id', studio.id)
             .eq('status', 'AVAILABLE')
             .order('score', { ascending: false })
             .limit(studio.daily_rotation);

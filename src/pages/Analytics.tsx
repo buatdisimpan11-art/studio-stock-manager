@@ -21,8 +21,7 @@ const Analytics = () => {
     }).format(value);
   };
 
-  const getStudioName = (studioId: string | null) => {
-    if (!studioId) return 'Global Pool';
+  const getStudioName = (studioId: string) => {
     const studio = studios?.find(s => s.id === studioId);
     return studio?.name || '-';
   };

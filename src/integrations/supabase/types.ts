@@ -62,7 +62,7 @@ export type Database = {
           original_url: string | null
           score: number
           status: Database["public"]["Enums"]["product_status"]
-          studio_id: string | null
+          studio_id: string
           updated_at: string
         }
         Insert: {
@@ -77,7 +77,7 @@ export type Database = {
           original_url?: string | null
           score?: number
           status?: Database["public"]["Enums"]["product_status"]
-          studio_id?: string | null
+          studio_id: string
           updated_at?: string
         }
         Update: {
@@ -92,7 +92,7 @@ export type Database = {
           original_url?: string | null
           score?: number
           status?: Database["public"]["Enums"]["product_status"]
-          studio_id?: string | null
+          studio_id?: string
           updated_at?: string
         }
         Relationships: [

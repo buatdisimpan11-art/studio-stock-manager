@@ -13,7 +13,7 @@ export interface Studio {
 
 export interface Product {
   id: string;
-  studio_id: string | null;
+  studio_id: string;
   name: string;
   affiliate_link: string;
   original_url: string | null;
