@@ -14,16 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_stats: {
+        Row: {
+          clicks: number
+          created_at: string
+          date: string
+          gmv: number
+          id: string
+          product_id: string
+        }
+        Insert: {
+          clicks?: number
+          created_at?: string
+          date?: string
+          gmv?: number
+          id?: string
+          product_id: string
+        }
+        Update: {
+          clicks?: number
+          created_at?: string
+          date?: string
+          gmv?: number
+          id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_stats_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string | null
+          clicks: number
+          cooldown_until: string | null
+          created_at: string
+          gmv: number
+          id: string
+          link: string
+          name: string
+          score: number
+          status: Database["public"]["Enums"]["product_status"]
+          studio_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          clicks?: number
+          cooldown_until?: string | null
+          created_at?: string
+          gmv?: number
+          id?: string
+          link: string
+          name: string
+          score?: number
+          status?: Database["public"]["Enums"]["product_status"]
+          studio_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          clicks?: number
+          cooldown_until?: string | null
+          created_at?: string
+          gmv?: number
+          id?: string
+          link?: string
+          name?: string
+          score?: number
+          status?: Database["public"]["Enums"]["product_status"]
+          studio_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_studio_id_fkey"
+            columns: ["studio_id"]
+            isOneToOne: false
+            referencedRelation: "studios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studios: {
+        Row: {
+          capacity: number
+          category: string
+          color: string
+          created_at: string
+          daily_rotation: number
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          category: string
+          color?: string
+          created_at?: string
+          daily_rotation?: number
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          category?: string
+          color?: string
+          created_at?: string
+          daily_rotation?: number
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_product_score: {
+        Args: {
+          clicks_value: number
+          clicks_weight?: number
+          gmv_value: number
+          gmv_weight?: number
+        }
+        Returns: number
+      }
     }
     Enums: {
-      [_ in never]: never
+      product_status: "AVAILABLE" | "LIVE" | "COOLDOWN" | "BLACKLIST"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +278,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      product_status: ["AVAILABLE", "LIVE", "COOLDOWN", "BLACKLIST"],
+    },
   },
 } as const

@@ -4,9 +4,10 @@ import { Button } from '@/components/ui/button';
 interface HeaderProps {
   title: string;
   subtitle?: string;
+  onUploadClick?: () => void;
 }
 
-export function Header({ title, subtitle }: HeaderProps) {
+export function Header({ title, subtitle, onUploadClick }: HeaderProps) {
   const today = new Date().toLocaleDateString('id-ID', {
     weekday: 'long',
     year: 'numeric',
@@ -27,10 +28,12 @@ export function Header({ title, subtitle }: HeaderProps) {
           <span>{today}</span>
         </div>
 
-        <Button variant="outline" size="sm" className="gap-2">
-          <Upload className="w-4 h-4" />
-          Upload Data
-        </Button>
+        {onUploadClick && (
+          <Button variant="outline" size="sm" className="gap-2" onClick={onUploadClick}>
+            <Upload className="w-4 h-4" />
+            Upload Data
+          </Button>
+        )}
 
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="w-5 h-5" />

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ArrowDownCircle, ArrowUpCircle, CheckCircle2 } from 'lucide-react';
-import { StudioRotation, RotationItem } from '@/types';
+import { StudioRotation } from '@/types/database';
 import { ProductCard } from './ProductCard';
+import { useMarkProductRemoved, useMarkProductAdded } from '@/hooks/useProducts';
 import { cn } from '@/lib/utils';
 
 interface StudioCardProps {
@@ -9,24 +10,25 @@ interface StudioCardProps {
 }
 
 export function StudioCard({ rotation }: StudioCardProps) {
-  const [toRemove, setToRemove] = useState<RotationItem[]>(rotation.toRemove);
-  const [toAdd, setToAdd] = useState<RotationItem[]>(rotation.toAdd);
+  const [completedRemove, setCompletedRemove] = useState<Set<string>>(new Set());
+  const [completedAdd, setCompletedAdd] = useState<Set<string>>(new Set());
+  
+  const markRemoved = useMarkProductRemoved();
+  const markAdded = useMarkProductAdded();
 
-  const handleMarkRemove = (index: number) => {
-    setToRemove(prev => prev.map((item, i) => 
-      i === index ? { ...item, markedComplete: true } : item
-    ));
+  const handleMarkRemove = async (productId: string) => {
+    await markRemoved.mutateAsync(productId);
+    setCompletedRemove(prev => new Set(prev).add(productId));
   };
 
-  const handleMarkAdd = (index: number) => {
-    setToAdd(prev => prev.map((item, i) => 
-      i === index ? { ...item, markedComplete: true } : item
-    ));
+  const handleMarkAdd = async (productId: string) => {
+    await markAdded.mutateAsync(productId);
+    setCompletedAdd(prev => new Set(prev).add(productId));
   };
 
-  const allComplete = toRemove.every(i => i.markedComplete) && toAdd.every(i => i.markedComplete);
-  const removeComplete = toRemove.filter(i => i.markedComplete).length;
-  const addComplete = toAdd.filter(i => i.markedComplete).length;
+  const removeComplete = completedRemove.size;
+  const addComplete = completedAdd.size;
+  const allComplete = removeComplete >= rotation.toRemove.length && addComplete >= rotation.toAdd.length;
 
   return (
     <div 
@@ -36,9 +38,6 @@ export function StudioCard({ rotation }: StudioCardProps) {
           ? "bg-card/50 border-success/30" 
           : "bg-gradient-card border-border shadow-card hover:shadow-elevated"
       )}
-      style={{
-        animationDelay: `${parseInt(rotation.studio.id.split('-')[1]) * 50}ms`
-      }}
     >
       {/* Header */}
       <div 
@@ -61,11 +60,11 @@ export function StudioCard({ rotation }: StudioCardProps) {
         {allComplete ? (
           <div className="flex items-center gap-2 text-success text-sm font-medium">
             <CheckCircle2 className="w-5 h-5" />
-            Complete
+            Selesai
           </div>
         ) : (
           <div className="text-xs text-muted-foreground">
-            {removeComplete + addComplete}/4 tasks done
+            {removeComplete + addComplete}/{rotation.toRemove.length + rotation.toAdd.length} tugas selesai
           </div>
         )}
       </div>
@@ -79,21 +78,26 @@ export function StudioCard({ rotation }: StudioCardProps) {
               <ArrowDownCircle className="w-4 h-4 text-destructive" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-destructive">OUT</p>
-              <p className="text-xs text-muted-foreground">{removeComplete}/{toRemove.length} removed</p>
+              <p className="text-sm font-semibold text-destructive">KELUAR</p>
+              <p className="text-xs text-muted-foreground">{removeComplete}/{rotation.toRemove.length} dihapus</p>
             </div>
           </div>
           
           <div className="space-y-3">
-            {toRemove.map((item, index) => (
-              <ProductCard
-                key={item.product.id}
-                product={item.product}
-                type="remove"
-                isComplete={item.markedComplete}
-                onMarkComplete={() => handleMarkRemove(index)}
-              />
-            ))}
+            {rotation.toRemove.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Tidak ada produk untuk dirotasi</p>
+            ) : (
+              rotation.toRemove.map((item) => (
+                <ProductCard
+                  key={item.product.id}
+                  product={item.product}
+                  type="remove"
+                  isComplete={completedRemove.has(item.product.id)}
+                  isLoading={markRemoved.isPending}
+                  onMarkComplete={() => handleMarkRemove(item.product.id)}
+                />
+              ))
+            )}
           </div>
         </div>
 
@@ -104,21 +108,26 @@ export function StudioCard({ rotation }: StudioCardProps) {
               <ArrowUpCircle className="w-4 h-4 text-success" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-success">IN</p>
-              <p className="text-xs text-muted-foreground">{addComplete}/{toAdd.length} added</p>
+              <p className="text-sm font-semibold text-success">MASUK</p>
+              <p className="text-xs text-muted-foreground">{addComplete}/{rotation.toAdd.length} ditambahkan</p>
             </div>
           </div>
           
           <div className="space-y-3">
-            {toAdd.map((item, index) => (
-              <ProductCard
-                key={item.product.id}
-                product={item.product}
-                type="add"
-                isComplete={item.markedComplete}
-                onMarkComplete={() => handleMarkAdd(index)}
-              />
-            ))}
+            {rotation.toAdd.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Tidak ada produk tersedia</p>
+            ) : (
+              rotation.toAdd.map((item) => (
+                <ProductCard
+                  key={item.product.id}
+                  product={item.product}
+                  type="add"
+                  isComplete={completedAdd.has(item.product.id)}
+                  isLoading={markAdded.isPending}
+                  onMarkComplete={() => handleMarkAdd(item.product.id)}
+                />
+              ))
+            )}
           </div>
         </div>
       </div>
