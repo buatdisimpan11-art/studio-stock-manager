@@ -8,16 +8,23 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStudios } from '@/hooks/useStudios';
+import { useProductStats } from '@/hooks/useProducts';
 
 const navigation = [
-  { name: 'Action Dashboard', href: '/', icon: Zap },
-  { name: 'Master Inventory', href: '/inventory', icon: Package },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard Aksi', href: '/', icon: Zap },
+  { name: 'Master Inventaris', href: '/inventory', icon: Package },
+  { name: 'Analitik', href: '/analytics', icon: BarChart3 },
+  { name: 'Pengaturan', href: '/settings', icon: Settings },
 ];
 
 export function Sidebar() {
   const location = useLocation();
+  const { data: studios } = useStudios();
+  const { data: stats } = useProductStats();
+
+  const totalLive = stats?.live || 0;
+  const studioCount = studios?.length || 0;
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -60,9 +67,9 @@ export function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-sidebar-border">
         <div className="px-4 py-3 rounded-lg bg-sidebar-accent">
-          <p className="text-xs text-muted-foreground">Active Studios</p>
-          <p className="text-2xl font-bold text-foreground">7</p>
-          <p className="text-xs text-primary mt-1">700 products live</p>
+          <p className="text-xs text-muted-foreground">Studio Aktif</p>
+          <p className="text-2xl font-bold text-foreground">{studioCount}</p>
+          <p className="text-xs text-primary mt-1">{totalLive} produk live</p>
         </div>
       </div>
     </aside>

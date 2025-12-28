@@ -1,44 +1,52 @@
 import { Package, ArrowRightLeft, Clock, AlertTriangle } from 'lucide-react';
-
-const stats = [
-  {
-    label: 'Total Products',
-    value: '800',
-    change: '+12 this week',
-    icon: Package,
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-  },
-  {
-    label: 'Pending Rotations',
-    value: '14',
-    change: '7 studios × 2',
-    icon: ArrowRightLeft,
-    color: 'text-warning',
-    bg: 'bg-warning/10',
-  },
-  {
-    label: 'In Cooldown',
-    value: '23',
-    change: '5 expiring today',
-    icon: Clock,
-    color: 'text-muted-foreground',
-    bg: 'bg-muted',
-  },
-  {
-    label: 'Dead Stock Alert',
-    value: '8',
-    change: '>7 days low perf',
-    icon: AlertTriangle,
-    color: 'text-destructive',
-    bg: 'bg-destructive/10',
-  },
-];
+import { useProductStats } from '@/hooks/useProducts';
+import { useStudios } from '@/hooks/useStudios';
 
 export function StatsBar() {
+  const { data: stats, isLoading: statsLoading } = useProductStats();
+  const { data: studios, isLoading: studiosLoading } = useStudios();
+
+  const studioCount = studios?.length || 0;
+  const dailyRotation = studios?.reduce((sum, s) => sum + s.daily_rotation, 0) || 0;
+
+  const statItems = [
+    {
+      label: 'Total Produk',
+      value: statsLoading ? '...' : stats?.total.toString() || '0',
+      change: `${stats?.live || 0} live`,
+      icon: Package,
+      color: 'text-primary',
+      bg: 'bg-primary/10',
+    },
+    {
+      label: 'Rotasi Pending',
+      value: dailyRotation.toString(),
+      change: `${studioCount} studio × rotasi`,
+      icon: ArrowRightLeft,
+      color: 'text-warning',
+      bg: 'bg-warning/10',
+    },
+    {
+      label: 'Dalam Cooldown',
+      value: statsLoading ? '...' : stats?.cooldown.toString() || '0',
+      change: 'Dibekukan sementara',
+      icon: Clock,
+      color: 'text-muted-foreground',
+      bg: 'bg-muted',
+    },
+    {
+      label: 'Tersedia',
+      value: statsLoading ? '...' : stats?.available.toString() || '0',
+      change: 'Siap ditambahkan',
+      icon: Package,
+      color: 'text-success',
+      bg: 'bg-success/10',
+    },
+  ];
+
   return (
     <div className="grid grid-cols-4 gap-4 mb-8">
-      {stats.map((stat, index) => (
+      {statItems.map((stat, index) => (
         <div
           key={stat.label}
           className="p-5 rounded-xl bg-card border border-border shadow-card hover:shadow-elevated transition-all duration-300 animate-slide-up"

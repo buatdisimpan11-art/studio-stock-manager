@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Copy, Check, ExternalLink, TrendingDown, TrendingUp, MousePointer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Product } from '@/types';
+import { Product } from '@/types/database';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -10,19 +10,20 @@ interface ProductCardProps {
   type: 'remove' | 'add';
   onMarkComplete: () => void;
   isComplete: boolean;
+  isLoading?: boolean;
 }
 
-export function ProductCard({ product, type, onMarkComplete, isComplete }: ProductCardProps) {
+export function ProductCard({ product, type, onMarkComplete, isComplete, isLoading }: ProductCardProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(product.link);
       setCopied(true);
-      toast.success('Link copied to clipboard!');
+      toast.success('Link berhasil disalin!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error('Failed to copy link');
+      toast.error('Gagal menyalin link');
     }
   };
 
@@ -68,12 +69,12 @@ export function ProductCard({ product, type, onMarkComplete, isComplete }: Produ
               {copied ? (
                 <>
                   <Check className="w-3.5 h-3.5" />
-                  Copied!
+                  Tersalin!
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  Copy Link
+                  Salin Link
                 </>
               )}
             </button>
@@ -95,7 +96,7 @@ export function ProductCard({ product, type, onMarkComplete, isComplete }: Produ
               </div>
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <MousePointer className="w-3.5 h-3.5" />
-                <span>{product.clicks} clicks</span>
+                <span>{product.clicks} klik</span>
               </div>
             </div>
           )}
@@ -103,7 +104,7 @@ export function ProductCard({ product, type, onMarkComplete, isComplete }: Produ
           {type === 'add' && (
             <div className="flex items-center gap-1.5 mt-3 text-xs text-success">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>Ready to perform</span>
+              <span>Siap tampil</span>
             </div>
           )}
         </div>
@@ -112,7 +113,7 @@ export function ProductCard({ product, type, onMarkComplete, isComplete }: Produ
           size="sm"
           variant={isComplete ? "ghost" : type === 'remove' ? "destructive" : "default"}
           onClick={onMarkComplete}
-          disabled={isComplete}
+          disabled={isComplete || isLoading}
           className={cn(
             "shrink-0 text-xs",
             !isComplete && type === 'add' && "bg-gradient-success hover:opacity-90"
@@ -121,9 +122,9 @@ export function ProductCard({ product, type, onMarkComplete, isComplete }: Produ
           {isComplete ? (
             <Check className="w-4 h-4" />
           ) : type === 'remove' ? (
-            'Remove'
+            'Hapus'
           ) : (
-            'Add'
+            'Tambah'
           )}
         </Button>
       </div>

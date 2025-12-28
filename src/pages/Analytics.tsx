@@ -1,40 +1,16 @@
-import { TrendingUp, TrendingDown, Minus, Calendar, Download } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Calendar, Download, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
-import { studios, allProducts } from '@/data/mockData';
+import { useAllProducts, useProductStats } from '@/hooks/useProducts';
+import { useStudios } from '@/hooks/useStudios';
 import { cn } from '@/lib/utils';
 
-const generateWeeklyData = () => {
-  return allProducts
-    .filter(p => p.status === 'LIVE')
-    .slice(0, 20)
-    .map(product => {
-      const studio = studios.find(s => s.id === product.currentStudioId);
-      const trend = Math.random() > 0.6 ? 'up' : Math.random() > 0.3 ? 'stable' : 'down';
-      const avgGmv = product.gmv * (0.8 + Math.random() * 0.4);
-      
-      return {
-        productId: product.id,
-        productName: product.name,
-        studioName: studio?.name || 'Unknown',
-        avgGmv,
-        avgClicks: product.clicks,
-        trend,
-        daysLive: Math.floor(Math.random() * 30) + 1,
-        weeklyGmv: [
-          avgGmv * 0.9, avgGmv * 1.1, avgGmv * 0.95, 
-          avgGmv * 1.05, avgGmv * 1.0, avgGmv * 0.85, avgGmv * 1.15
-        ],
-      };
-    });
-};
-
-const weeklyData = generateWeeklyData();
-const topPerformers = [...weeklyData].sort((a, b) => b.avgGmv - a.avgGmv).slice(0, 10);
-const deadStock = weeklyData.filter(p => p.daysLive > 7 && p.avgGmv < 500000);
-
 const Analytics = () => {
+  const { data: products, isLoading: productsLoading } = useAllProducts('LIVE');
+  const { data: studios } = useStudios();
+  const { data: stats, isLoading: statsLoading } = useProductStats();
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -44,17 +20,33 @@ const Analytics = () => {
     }).format(value);
   };
 
-  const TrendIcon = ({ trend }: { trend: string }) => {
-    if (trend === 'up') return <TrendingUp className="w-4 h-4 text-success" />;
-    if (trend === 'down') return <TrendingDown className="w-4 h-4 text-destructive" />;
+  const getStudioName = (studioId: string) => {
+    const studio = studios?.find(s => s.id === studioId);
+    return studio?.name || '-';
+  };
+
+  // Sort products by GMV for top performers
+  const topPerformers = [...(products || [])].sort((a, b) => b.gmv - a.gmv).slice(0, 10);
+  
+  // Find products with low performance (gmv < 500000)
+  const deadStock = (products || []).filter(p => p.gmv < 500000).slice(0, 10);
+
+  // Calculate total GMV
+  const totalGmv = (products || []).reduce((sum, p) => sum + p.gmv, 0);
+
+  const TrendIcon = ({ value }: { value: number }) => {
+    if (value > 1000000) return <TrendingUp className="w-4 h-4 text-success" />;
+    if (value < 500000) return <TrendingDown className="w-4 h-4 text-destructive" />;
     return <Minus className="w-4 h-4 text-muted-foreground" />;
   };
+
+  const isLoading = productsLoading || statsLoading;
 
   return (
     <AppLayout>
       <Header 
-        title="Analytics Report" 
-        subtitle="Weekly performance insights"
+        title="Laporan Analitik" 
+        subtitle="Insight performa mingguan"
       />
       
       <div className="p-8">
@@ -63,111 +55,125 @@ const Analytics = () => {
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" className="gap-2">
               <Calendar className="w-4 h-4" />
-              Last 7 Days
+              7 Hari Terakhir
             </Button>
           </div>
           <Button variant="outline" size="sm" className="gap-2">
             <Download className="w-4 h-4" />
-            Export Report
+            Export Laporan
           </Button>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-            <p className="text-sm text-muted-foreground mb-1">Total Weekly GMV</p>
-            <p className="text-3xl font-bold text-foreground">{formatCurrency(topPerformers.reduce((sum, p) => sum + p.avgGmv * 7, 0))}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <TrendingUp className="w-4 h-4 text-success" />
-              <span className="text-sm text-success">+12.5% vs last week</span>
-            </div>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
-          
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
-            <p className="text-sm text-muted-foreground mb-1">Top Performers</p>
-            <p className="text-3xl font-bold text-foreground">{topPerformers.length}</p>
-            <p className="text-sm text-success mt-2">Products with consistent high GMV</p>
-          </div>
-          
-          <div className="p-6 rounded-2xl bg-gradient-to-br from-destructive/10 to-destructive/5 border border-destructive/20">
-            <p className="text-sm text-muted-foreground mb-1">Dead Stock Alert</p>
-            <p className="text-3xl font-bold text-foreground">{deadStock.length}</p>
-            <p className="text-sm text-destructive mt-2">&gt;7 days with low performance</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-6">
-          {/* Top Performers */}
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
-            <div className="px-6 py-4 border-b border-border bg-success/5">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-success" />
-                Top Performers This Week
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">Products to prioritize for hosts</p>
-            </div>
-            <div className="divide-y divide-border">
-              {topPerformers.map((product, index) => (
-                <div key={product.productId} className="px-6 py-4 hover:bg-secondary/30 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm",
-                        index < 3 ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
-                      )}>
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground truncate max-w-[200px]">{product.productName}</p>
-                        <p className="text-xs text-muted-foreground">{product.studioName}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-foreground">{formatCurrency(product.avgGmv)}</p>
-                      <div className="flex items-center justify-end gap-1 mt-1">
-                        <TrendIcon trend={product.trend} />
-                        <span className="text-xs text-muted-foreground">{product.daysLive}d live</span>
-                      </div>
-                    </div>
-                  </div>
+        ) : (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-3 gap-6 mb-8">
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                <p className="text-sm text-muted-foreground mb-1">Total GMV Live</p>
+                <p className="text-3xl font-bold text-foreground">{formatCurrency(totalGmv)}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <TrendingUp className="w-4 h-4 text-success" />
+                  <span className="text-sm text-success">Dari {stats?.live || 0} produk live</span>
                 </div>
-              ))}
+              </div>
+              
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
+                <p className="text-sm text-muted-foreground mb-1">Top Performer</p>
+                <p className="text-3xl font-bold text-foreground">{topPerformers.length}</p>
+                <p className="text-sm text-success mt-2">Produk dengan GMV tinggi</p>
+              </div>
+              
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-destructive/10 to-destructive/5 border border-destructive/20">
+                <p className="text-sm text-muted-foreground mb-1">Peringatan Dead Stock</p>
+                <p className="text-3xl font-bold text-foreground">{deadStock.length}</p>
+                <p className="text-sm text-destructive mt-2">Performa rendah</p>
+              </div>
             </div>
-          </div>
 
-          {/* Dead Stock */}
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
-            <div className="px-6 py-4 border-b border-border bg-destructive/5">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <TrendingDown className="w-5 h-5 text-destructive" />
-                Dead Stock Alert
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">Consider manual removal</p>
-            </div>
-            <div className="divide-y divide-border">
-              {deadStock.length === 0 ? (
-                <div className="px-6 py-12 text-center">
-                  <p className="text-muted-foreground">No dead stock detected</p>
+            <div className="grid grid-cols-2 gap-6">
+              {/* Top Performers */}
+              <div className="rounded-2xl border border-border bg-card overflow-hidden">
+                <div className="px-6 py-4 border-b border-border bg-success/5">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-success" />
+                    Top Performer Minggu Ini
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">Produk untuk diprioritaskan host</p>
                 </div>
-              ) : (
-                deadStock.map((product) => (
-                  <div key={product.productId} className="px-6 py-4 hover:bg-secondary/30 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-foreground truncate max-w-[200px]">{product.productName}</p>
-                        <p className="text-xs text-muted-foreground">{product.studioName}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-destructive">{formatCurrency(product.avgGmv)}</p>
-                        <p className="text-xs text-muted-foreground">{product.daysLive} days live</p>
-                      </div>
+                <div className="divide-y divide-border">
+                  {topPerformers.length === 0 ? (
+                    <div className="px-6 py-12 text-center">
+                      <p className="text-muted-foreground">Belum ada data produk</p>
                     </div>
-                  </div>
-                ))
-              )}
+                  ) : (
+                    topPerformers.map((product, index) => (
+                      <div key={product.id} className="px-6 py-4 hover:bg-secondary/30 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm",
+                              index < 3 ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                            )}>
+                              {index + 1}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-foreground truncate max-w-[200px]">{product.name}</p>
+                              <p className="text-xs text-muted-foreground">{getStudioName(product.studio_id)}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-foreground">{formatCurrency(product.gmv)}</p>
+                            <div className="flex items-center justify-end gap-1 mt-1">
+                              <TrendIcon value={product.gmv} />
+                              <span className="text-xs text-muted-foreground">{product.clicks} klik</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Dead Stock */}
+              <div className="rounded-2xl border border-border bg-card overflow-hidden">
+                <div className="px-6 py-4 border-b border-border bg-destructive/5">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <TrendingDown className="w-5 h-5 text-destructive" />
+                    Peringatan Dead Stock
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">Pertimbangkan untuk dihapus manual</p>
+                </div>
+                <div className="divide-y divide-border">
+                  {deadStock.length === 0 ? (
+                    <div className="px-6 py-12 text-center">
+                      <p className="text-muted-foreground">Tidak ada dead stock terdeteksi</p>
+                    </div>
+                  ) : (
+                    deadStock.map((product) => (
+                      <div key={product.id} className="px-6 py-4 hover:bg-secondary/30 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-foreground truncate max-w-[200px]">{product.name}</p>
+                            <p className="text-xs text-muted-foreground">{getStudioName(product.studio_id)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-destructive">{formatCurrency(product.gmv)}</p>
+                            <p className="text-xs text-muted-foreground">{product.clicks} klik</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </AppLayout>
   );
