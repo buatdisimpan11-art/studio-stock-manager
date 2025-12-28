@@ -1,10 +1,11 @@
-import { TrendingUp, TrendingDown, Minus, Calendar, Download, Loader2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Calendar, Download, Loader2, Skull } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { useAllProducts, useProductStats } from '@/hooks/useProducts';
 import { useStudios } from '@/hooks/useStudios';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 const Analytics = () => {
   const { data: products, isLoading: productsLoading } = useAllProducts('LIVE');
@@ -20,7 +21,8 @@ const Analytics = () => {
     }).format(value);
   };
 
-  const getStudioName = (studioId: string) => {
+  const getStudioName = (studioId: string | null) => {
+    if (!studioId) return 'Global Pool';
     const studio = studios?.find(s => s.id === studioId);
     return studio?.name || '-';
   };
@@ -30,6 +32,9 @@ const Analytics = () => {
   
   // Find products with low performance (gmv < 500000)
   const deadStock = (products || []).filter(p => p.gmv < 500000).slice(0, 10);
+
+  // Zombie Products: High clicks (>100) but no sales (GMV = 0)
+  const zombieProducts = (products || []).filter(p => p.clicks > 100 && p.gmv === 0);
 
   // Calculate total GMV
   const totalGmv = (products || []).reduce((sum, p) => sum + p.gmv, 0);
@@ -71,7 +76,7 @@ const Analytics = () => {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-4 gap-6 mb-8">
               <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
                 <p className="text-sm text-muted-foreground mb-1">Total GMV Live</p>
                 <p className="text-3xl font-bold text-foreground">{formatCurrency(totalGmv)}</p>
@@ -92,7 +97,63 @@ const Analytics = () => {
                 <p className="text-3xl font-bold text-foreground">{deadStock.length}</p>
                 <p className="text-sm text-destructive mt-2">Performa rendah</p>
               </div>
+
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <Skull className="w-4 h-4 text-warning" />
+                  <p className="text-sm text-muted-foreground">Zombie Products</p>
+                </div>
+                <p className="text-3xl font-bold text-foreground">{zombieProducts.length}</p>
+                <p className="text-sm text-warning mt-2">Traffic tinggi, 0 penjualan</p>
+              </div>
             </div>
+
+            {/* Zombie Products Alert */}
+            {zombieProducts.length > 0 && (
+              <div className="mb-8 rounded-2xl border border-warning/30 bg-warning/5 overflow-hidden">
+                <div className="px-6 py-4 border-b border-warning/20 bg-warning/10">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <Skull className="w-5 h-5 text-warning" />
+                    Zombie Products - Perlu Investigasi
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Produk dengan traffic tinggi tapi tidak ada konversi penjualan
+                  </p>
+                </div>
+                <div className="divide-y divide-warning/20">
+                  {zombieProducts.slice(0, 5).map((product) => (
+                    <div key={product.id} className="px-6 py-4 hover:bg-warning/5 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-warning/20 flex items-center justify-center">
+                            <Skull className="w-4 h-4 text-warning" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground truncate max-w-[200px]">{product.name}</p>
+                            <p className="text-xs text-muted-foreground">{getStudioName(product.studio_id)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30">
+                            {product.clicks} klik
+                          </Badge>
+                          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
+                            Rp 0
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {zombieProducts.length > 5 && (
+                    <div className="px-6 py-3 bg-warning/5">
+                      <p className="text-sm text-warning">
+                        +{zombieProducts.length - 5} zombie products lainnya
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-6">
               {/* Top Performers */}

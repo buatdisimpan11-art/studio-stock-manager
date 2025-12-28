@@ -27,26 +27,26 @@ export function useRotations() {
 
           if (liveError) throw liveError;
 
-          // Get AVAILABLE products for this studio
+          // Get AVAILABLE products from Global Reserve Pool (studio_id IS NULL)
           const { data: availableProducts, error: availableError } = await supabase
             .from('products')
             .select('*')
-            .eq('studio_id', studio.id)
+            .is('studio_id', null)
             .eq('status', 'AVAILABLE')
-            .order('created_at', { ascending: false })
+            .order('score', { ascending: false })
             .limit(studio.daily_rotation);
 
           if (availableError) throw availableError;
 
           return {
             studio,
-            toRemove: (liveProducts || []).map((product: Product) => ({
-              product,
+            toRemove: (liveProducts || []).map((product) => ({
+              product: product as Product,
               action: 'remove' as const,
               markedComplete: false,
             })),
-            toAdd: (availableProducts || []).map((product: Product) => ({
-              product,
+            toAdd: (availableProducts || []).map((product) => ({
+              product: product as Product,
               action: 'add' as const,
               markedComplete: false,
             })),

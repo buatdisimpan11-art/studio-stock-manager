@@ -18,9 +18,9 @@ export function ProductCard({ product, type, onMarkComplete, isComplete, isLoadi
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(product.link);
+      await navigator.clipboard.writeText(product.affiliate_link);
       setCopied(true);
-      toast.success('Link berhasil disalin!');
+      toast.success('Link affiliate berhasil disalin!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('Gagal menyalin link');
@@ -79,7 +79,7 @@ export function ProductCard({ product, type, onMarkComplete, isComplete, isLoadi
               )}
             </button>
             <a
-              href={product.link}
+              href={product.affiliate_link}
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"

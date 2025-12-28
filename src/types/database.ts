@@ -13,9 +13,10 @@ export interface Studio {
 
 export interface Product {
   id: string;
-  studio_id: string;
+  studio_id: string | null;
   name: string;
-  link: string;
+  affiliate_link: string;
+  original_url: string | null;
   category: string | null;
   status: ProductStatus;
   gmv: number;
