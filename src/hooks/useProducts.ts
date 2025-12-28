@@ -160,6 +160,41 @@ export function useBulkCreateProducts() {
   });
 }
 
+export function useBulkUpdatePerformance() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (updates: Array<{ id: string; gmv: number; clicks: number }>) => {
+      const results = [];
+      
+      for (const update of updates) {
+        const score = calculateScore(update.gmv, update.clicks);
+        const { data, error } = await supabase
+          .from('products')
+          .update({ gmv: update.gmv, clicks: update.clicks, score })
+          .eq('id', update.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        results.push(data);
+      }
+
+      return results;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['all-products'] });
+      queryClient.invalidateQueries({ queryKey: ['product-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['rotations'] });
+      toast.success(`${data.length} produk berhasil diupdate!`);
+    },
+    onError: (error) => {
+      toast.error('Gagal mengupdate produk: ' + error.message);
+    },
+  });
+}
+
 export function useMarkProductRemoved() {
   const queryClient = useQueryClient();
 
