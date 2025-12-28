@@ -68,7 +68,7 @@ export function useCreateProduct() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: Partial<Product> & { name: string; affiliate_link: string }) => {
+    mutationFn: async (data: Partial<Product> & { studio_id: string; name: string; affiliate_link: string }) => {
       const score = calculateScore(data.gmv || 0, data.clicks || 0);
       
       const { data: product, error } = await supabase
@@ -125,7 +125,7 @@ export function useBulkCreateProducts() {
 
   return useMutation({
     mutationFn: async (products: Array<{ 
-      studio_id?: string | null; 
+      studio_id: string; 
       name: string; 
       affiliate_link: string; 
       original_url?: string;

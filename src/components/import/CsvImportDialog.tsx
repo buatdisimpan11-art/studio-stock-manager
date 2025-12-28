@@ -2,6 +2,8 @@ import { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useStudios } from '@/hooks/useStudios';
 import { useBulkCreateProducts } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
 import { ProductStatus } from '@/types/database';
@@ -26,12 +28,14 @@ interface ImportResult {
 }
 
 export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
+  const [selectedStudio, setSelectedStudio] = useState<string>('');
   const [parsedProducts, setParsedProducts] = useState<ParsedProduct[]>([]);
   const [duplicates, setDuplicates] = useState<string[]>([]);
   const [importStatus, setImportStatus] = useState<'idle' | 'validating' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { data: studios } = useStudios();
   const bulkCreate = useBulkCreateProducts();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,12 +166,12 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
   };
 
   const handleImport = async () => {
-    if (parsedProducts.length === 0) return;
+    if (!selectedStudio || parsedProducts.length === 0) return;
 
     try {
       await bulkCreate.mutateAsync(
         parsedProducts.map(p => ({
-          studio_id: null, // Import to Global Pool
+          studio_id: selectedStudio,
           name: p.name,
           affiliate_link: p.affiliate_link,
           original_url: p.original_url,
@@ -191,6 +195,7 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
   const resetState = () => {
     setParsedProducts([]);
     setDuplicates([]);
+    setSelectedStudio('');
     setImportStatus('idle');
     setErrorMessage('');
     if (fileInputRef.current) {
@@ -207,16 +212,28 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-foreground">
             <FileSpreadsheet className="w-5 h-5 text-primary" />
-            Import Produk ke Global Pool
+            Import Produk dari CSV
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Info */}
-          <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
-            <p className="text-xs text-primary">
-              💡 Produk akan masuk ke <strong>Global Reserve Pool</strong> dan siap diambil oleh studio mana saja.
-            </p>
+          {/* Studio Selection */}
+          <div>
+            <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              Pilih Studio Tujuan
+            </label>
+            <Select value={selectedStudio} onValueChange={setSelectedStudio}>
+              <SelectTrigger className="bg-secondary border-border">
+                <SelectValue placeholder="Pilih studio..." />
+              </SelectTrigger>
+              <SelectContent>
+                {studios?.map((studio) => (
+                  <SelectItem key={studio.id} value={studio.id}>
+                    {studio.name} - {studio.category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* File Upload */}
@@ -264,7 +281,7 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
           {importStatus === 'success' && (
             <div className="flex items-center gap-2 text-success text-sm bg-success/10 p-3 rounded-lg">
               <CheckCircle2 className="w-4 h-4" />
-              Berhasil mengimport {parsedProducts.length} produk ke Global Pool!
+              Berhasil mengimport {parsedProducts.length} produk!
             </div>
           )}
 
@@ -318,7 +335,7 @@ export function CsvImportDialog({ open, onOpenChange }: CsvImportDialogProps) {
             </Button>
             <Button
               className="flex-1 bg-gradient-primary"
-              disabled={parsedProducts.length === 0 || bulkCreate.isPending || importStatus === 'validating'}
+              disabled={!selectedStudio || parsedProducts.length === 0 || bulkCreate.isPending || importStatus === 'validating'}
               onClick={handleImport}
             >
               {bulkCreate.isPending ? 'Mengimport...' : `Import ${parsedProducts.length} Produk`}
